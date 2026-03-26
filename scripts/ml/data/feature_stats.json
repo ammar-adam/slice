@@ -1,0 +1,71 @@
+{
+  "generated_at": "2026-03-26T13:28:11.113983+00:00",
+  "n_rows": 50000,
+  "global_late_rate": 0.31508,
+  "baseline_true_time_multiplier": 0.5678253173828127,
+  "feature_stats": {
+    "hour_of_day": {
+      "mean": 11.49872,
+      "std": 6.922432980928372
+    },
+    "day_of_week": {
+      "mean": 2.99712,
+      "std": 1.9952723397046692
+    },
+    "month": {
+      "mean": 6.63024,
+      "std": 3.3523838606437613
+    },
+    "precip_mm": {
+      "mean": 0.09415400000000002,
+      "std": 0.4153832268096131
+    },
+    "temp_celsius": {
+      "mean": 8.237142,
+      "std": 11.71460788482761
+    },
+    "distance_km": {
+      "mean": 2.862908111568985,
+      "std": 1.9412032954282545
+    },
+    "restaurant_rating": {
+      "mean": 4.144785805733676,
+      "std": 0.3469016619219617
+    },
+    "restaurant_review_count": {
+      "mean": 331.68786,
+      "std": 366.76325457896394
+    },
+    "restaurant_busy_score": {
+      "mean": 48.329545114870804,
+      "std": 27.857991994204976
+    },
+    "eta_initial_minutes": {
+      "mean": 76.08726,
+      "std": 26.170342866396318
+    },
+    "eta_bias_factor": {
+      "mean": 1.1849992172678816,
+      "std": 0.02019375883582822
+    },
+    "is_peak": {
+      "mean": 0.33328,
+      "std": 0.47138566221595174
+    }
+  },
+  "schema": {
+    "hour_of_day": "int",
+    "day_of_week": "int",
+    "month": "int",
+    "is_peak": "bool",
+    "precip_mm": "float",
+    "temp_celsius": "float",
+    "distance_km": "float",
+    "restaurant_rating": "float",
+    "restaurant_review_count": "int",
+    "restaurant_busy_score": "float",
+    "eta_initial_minutes": "int",
+    "eta_bias_factor": "float",
+    "was_late": "bool"
+  }
+}
