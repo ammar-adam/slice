@@ -29,6 +29,9 @@ port = 54324
 # -----------------------------------------------------------------------------
 [functions.resolve-bets]
 verify_jwt = true
+# Supabase CLI scheduled functions (cron syntax).
+# If your CLI/version doesn't support this yet, schedule via pg_cron + pg_net instead.
+schedule = "*/5 * * * *"
 
 [functions.ingest-mail]
 verify_jwt = true

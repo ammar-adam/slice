@@ -46,6 +46,22 @@ function json(data: unknown, status = 200) {
   });
 }
 
+async function readBody(req: Request): Promise<{ order_id?: string } | null> {
+  try {
+    if (req.method !== "POST") return null;
+    const ct = req.headers.get("content-type") ?? "";
+    if (!ct.toLowerCase().includes("application/json")) return null;
+    const json = await req.json().catch(() => null) as unknown;
+    if (!json || typeof json !== "object") return null;
+    const order_id = (json as { order_id?: unknown }).order_id;
+    return typeof order_id === "string" && order_id.trim()
+      ? { order_id: order_id.trim() }
+      : {};
+  } catch {
+    return null;
+  }
+}
+
 async function fetchDeliveredCandidates(
   accessToken: string,
 ): Promise<
@@ -123,6 +139,9 @@ serve(async (req) => {
   }
 
   try {
+    const body = await readBody(req);
+    const onlyOrderId = body?.order_id ?? null;
+
     const sb0 = getServiceSupabase();
     if (!sb0.ok) {
       return json(
@@ -136,7 +155,7 @@ serve(async (req) => {
     const nowIso = new Date().toISOString();
     const nowMs = Date.now();
 
-    const { data: orderRows, error: oErr } = await supabase.from("orders")
+    const baseQuery = supabase.from("orders")
       .select(`
         id,
         host_id,
@@ -150,8 +169,11 @@ serve(async (req) => {
         gmail_message_id_delivered,
         bets ( id, host_id, status, resolve_deadline_at, delay_probability )
       `)
-      .eq("resolved", false)
-      .lt("order_placed_at", tenMinAgo);
+      .eq("resolved", false);
+
+    const { data: orderRows, error: oErr } = onlyOrderId
+      ? await baseQuery.eq("id", onlyOrderId)
+      : await baseQuery.lt("order_placed_at", tenMinAgo);
 
     if (oErr) {
       return json(
@@ -166,7 +188,10 @@ serve(async (req) => {
       );
     }
 
-    const orders = (orderRows ?? []) as OrderWithBets[];
+    const filtered = (orderRows ?? []) as OrderWithBets[];
+    const orders = onlyOrderId
+      ? filtered.filter((o) => o.id === onlyOrderId)
+      : filtered;
     const byHost = new Map<string, OrderWithBets[]>();
     for (const o of orders) {
       const list = byHost.get(o.host_id) ?? [];
@@ -181,6 +206,20 @@ serve(async (req) => {
       betsVoided: 0,
       errors: [] as string[],
     };
+
+    if (onlyOrderId && orders.length === 0) {
+      return json(
+        {
+          ok: false,
+          error: {
+            code: "order_not_found_or_not_eligible",
+            message:
+              "Order not found (or already resolved, or not older than 10 minutes)",
+          },
+        },
+        404,
+      );
+    }
 
     const maxOrderAgeMs = 72 * 3600_000;
 
@@ -319,7 +358,7 @@ serve(async (req) => {
       }
     }
 
-    return json({ ok: true, summary });
+    return json({ ok: true, order_id: onlyOrderId, summary });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     return json(

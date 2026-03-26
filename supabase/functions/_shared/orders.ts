@@ -1,10 +1,28 @@
-/** Align with product: normalized restaurant key for matching + dedupe. */
+/**
+ * Canonical restaurant normalization used everywhere (UI/manual orders + Edge Gmail ingest/resolve).
+ *
+ * MUST match `lib/orders/normalize.ts` exactly. Deno cannot import from `lib/`, so this is a copy.
+ *
+ * Rules:
+ * - lowercase
+ * - remove diacritics (NFD + strip combining marks)
+ * - remove all punctuation except ampersand (&)
+ * - collapse whitespace
+ * - trim
+ *
+ * Test cases (input -> output):
+ * 1) "Café Déjà Vu" -> "cafe deja vu"
+ * 2) "Joe's Pizza!!!" -> "joes pizza"
+ * 3) "A&B  Sushi" -> "a&b sushi"
+ * 4) "  Taco—Bell (Waterloo) " -> "tacobell waterloo"
+ * 5) "Pita & Shawarma\t\tBar" -> "pita & shawarma bar"
+ */
 export function normalizeRestaurantKey(name: string): string {
   return name
     .toLowerCase()
-    .normalize("NFKD")
+    .normalize("NFD")
     .replace(/\p{M}/gu, "")
-    .replace(/[^a-z0-9'&]+/g, " ")
+    .replace(/[^\p{L}\p{N}\s&]+/gu, "")
     .replace(/\s+/g, " ")
     .trim();
 }

@@ -1,22 +1,99 @@
-import Link from "next/link";
+\"use client\";
 
-import { getSession } from "@/lib/auth/session";
-import { getHostIdByNextAuthUserId } from "@/lib/hosts/lookup";
-import { listRecentOrdersForHost } from "@/lib/orders/queries";
+import Link from \"next/link\";
+import { useEffect, useMemo, useState } from \"react\";
+import { useSession } from \"next-auth/react\";
+
+type HostOrderRow = {
+  id: string;
+  restaurant_name: string;
+  resolved: boolean;
+  order_placed_at: string;
+};
 
 function statusLabel(resolved: boolean) {
   return resolved ? "Delivered" : "In progress";
 }
 
 export default async function HomePage() {
-  const session = await getSession();
-  const hostId = session?.user?.id
-    ? await getHostIdByNextAuthUserId(session.user.id)
-    : null;
-  const orders = hostId ? await listRecentOrdersForHost(hostId, 10) : [];
+  const { data: session, status } = useSession();
+  const signedInEmail = session?.user?.email ?? null;
+
+  const [orders, setOrders] = useState<HostOrderRow[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  const [toast, setToast] = useState<{
+    kind: \"success\" | \"error\";
+    message: string;
+  } | null>(null);
+
+  const toastTimer = useMemo<{ id: number | null }>(() => ({ id: null }), []);
+
+  function showToast(kind: \"success\" | \"error\", message: string) {
+    setToast({ kind, message });
+    if (toastTimer.id != null) window.clearTimeout(toastTimer.id);
+    toastTimer.id = window.setTimeout(() => setToast(null), 3500);
+  }
+
+  async function refreshOrders() {
+    setOrdersLoading(true);
+    try {
+      const res = await fetch(\"/api/internal/orders\", { method: \"GET\" });
+      const data = (await res.json().catch(() => ({}))) as {
+        orders?: HostOrderRow[];
+        error?: string;
+      };
+      if (!res.ok) {
+        showToast(\"error\", typeof data.error === \"string\" ? data.error : \"Could not load orders\");
+        return;
+      }
+      setOrders(Array.isArray(data.orders) ? data.orders : []);
+    } finally {
+      setOrdersLoading(false);
+    }
+  }
+
+  async function syncOrders() {
+    setSyncing(true);
+    try {
+      const res = await fetch(\"/api/internal/gmail/sync\", { method: \"POST\" });
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: { message?: string };
+      };
+      if (!res.ok || data.ok !== true) {
+        showToast(\"error\", data.error?.message ?? \"Sync failed\");
+        return;
+      }
+      showToast(\"success\", \"Synced Gmail orders\");
+      await refreshOrders();
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  useEffect(() => {
+    if (status !== \"authenticated\") return;
+    void refreshOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   return (
     <main className="space-y-6">
+      {toast ? (
+        <div
+          className={`sticky top-2 z-10 rounded-2xl px-4 py-3 text-sm font-medium ring-1 ${
+            toast.kind === \"success\"
+              ? \"bg-emerald-50 text-emerald-900 ring-emerald-100\"
+              : \"bg-red-50 text-red-800 ring-red-100\"
+          }`}
+          role=\"status\"
+        >
+          {toast.message}
+        </div>
+      ) : null}
+
       <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-black/[0.06]">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slice-primary">
           Host
@@ -25,10 +102,19 @@ export default async function HomePage() {
         <p className="mt-2 text-sm text-neutral-600">
           Signed in as{" "}
           <span className="font-medium text-neutral-900">
-            {session?.user?.email ?? "friend"}
+            {signedInEmail ?? \"friend\"}
           </span>
         </p>
       </div>
+
+      <button
+        type=\"button\"
+        onClick={() => void syncOrders()}
+        disabled={syncing || status !== \"authenticated\"}
+        className=\"flex w-full items-center justify-center rounded-2xl bg-white py-4 text-sm font-semibold text-neutral-900 shadow-sm ring-1 ring-black/[0.06] transition hover:bg-neutral-50 disabled:opacity-60\"
+      >
+        {syncing ? \"Syncing orders…\" : \"Sync orders\"}
+      </button>
 
       <Link
         href="/create"
@@ -39,7 +125,11 @@ export default async function HomePage() {
 
       <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-black/[0.06]">
         <h2 className="text-sm font-semibold text-neutral-900">Recent orders</h2>
-        {orders.length === 0 ? (
+        {ordersLoading ? (
+          <p className=\"mt-6 rounded-2xl bg-neutral-50 px-4 py-10 text-center text-sm text-neutral-500 ring-1 ring-black/[0.04]\">
+            Loading…
+          </p>
+        ) : orders.length === 0 ? (
           <p className="mt-6 rounded-2xl bg-neutral-50 px-4 py-10 text-center text-sm text-neutral-500 ring-1 ring-black/[0.04]">
             Order something and start a bet with your group
           </p>
