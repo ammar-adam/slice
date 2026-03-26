@@ -1,5 +1,3 @@
-import "server-only";
-
 type LatLng = { lat: number; lng: number };
 
 function clamp(n: number, lo: number, hi: number): number {

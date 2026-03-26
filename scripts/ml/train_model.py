@@ -12,7 +12,7 @@ import numpy as np
 import optuna
 import pandas as pd
 import shap
-from sklearn.calibration import CalibratedClassifierCV, calibration_curve
+from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
@@ -67,6 +67,65 @@ def compute_feature_stats(df: pd.DataFrame, feature_names: List[str]) -> Dict[st
         sd = float(np.std(x) + 1e-9)
         stats[f] = {"mean": mu, "std": sd}
     return stats
+
+
+def _sigmoid(z: np.ndarray) -> np.ndarray:
+    # numerically stable sigmoid
+    z = np.clip(z, -60, 60)
+    return 1.0 / (1.0 + np.exp(-z))
+
+
+def _logit(p: np.ndarray) -> np.ndarray:
+    p = np.clip(p, 1e-6, 1.0 - 1e-6)
+    return np.log(p / (1.0 - p))
+
+
+class PlattCalibrator:
+    """
+    Platt scaling: fit a sigmoid on model log-odds.
+    posterior = sigmoid(a * logit(p_raw) + b)
+    """
+
+    def __init__(self, a: float, b: float):
+        self.a = float(a)
+        self.b = float(b)
+
+    def predict_proba_from_raw_prob(self, raw_prob: np.ndarray) -> np.ndarray:
+        x = _logit(raw_prob.astype(np.float64))
+        p1 = _sigmoid(self.a * x + self.b)
+        p0 = 1.0 - p1
+        return np.stack([p0, p1], axis=1)
+
+    def predict_proba(self, X: np.ndarray, model: XGBClassifier) -> np.ndarray:
+        raw = model.predict_proba(X)[:, 1]
+        return self.predict_proba_from_raw_prob(raw)
+
+
+def fit_platt_scaler_from_validation(
+    raw_prob_val: np.ndarray,
+    y_val: np.ndarray,
+) -> PlattCalibrator:
+    # Fit a, b by logistic regression on logit(p_raw).
+    # Optimize negative log-likelihood with simple gradient steps (stable + dependency-free).
+    x = _logit(raw_prob_val.astype(np.float64))
+    y = y_val.astype(np.float64)
+
+    a = 1.0
+    b = 0.0
+    lr = 0.05
+    for _ in range(2500):
+        z = a * x + b
+        p = _sigmoid(z)
+        # gradients
+        da = np.mean((p - y) * x)
+        db = np.mean(p - y)
+        a -= lr * da
+        b -= lr * db
+        # light damping if diverging
+        if not (math.isfinite(a) and math.isfinite(b)):
+            a, b = 1.0, 0.0
+            lr *= 0.5
+    return PlattCalibrator(a=a, b=b)
 
 
 def main() -> None:
@@ -182,11 +241,11 @@ def main() -> None:
         verbose=False,
     )
 
-    calibrated = CalibratedClassifierCV(best_xgb, method="sigmoid", cv="prefit")
-    calibrated.fit(X_val, y_val)
+    raw_val_prob = best_xgb.predict_proba(X_val)[:, 1]
+    calibrator = fit_platt_scaler_from_validation(raw_val_prob, y_val)
 
     raw_test_prob = best_xgb.predict_proba(X_test)[:, 1]
-    cal_test_prob = calibrated.predict_proba(X_test)[:, 1]
+    cal_test_prob = calibrator.predict_proba_from_raw_prob(raw_test_prob)[:, 1]
 
     roc = float(roc_auc_score(y_test, cal_test_prob))
     brier = float(brier_score_loss(y_test, cal_test_prob))
@@ -266,7 +325,7 @@ def main() -> None:
 
     cal_path = MODEL_DIR / "calibrator_v1.pkl"
     with cal_path.open("wb") as f:
-        pickle.dump(calibrated, f)
+        pickle.dump(calibrator, f)
 
     feature_names_path = MODEL_DIR / "feature_names.json"
     feature_names_path.write_text(json.dumps(feature_cols, indent=2), encoding="utf-8")
@@ -277,7 +336,7 @@ def main() -> None:
     (MODEL_DIR / "eval_report.json").write_text(json.dumps(eval_report, indent=2), encoding="utf-8")
 
     # Convenience: also dump calibrator with joblib for faster loads if desired
-    joblib.dump(calibrated, MODEL_DIR / "calibrator_v1.joblib")
+    joblib.dump(calibrator, MODEL_DIR / "calibrator_v1.joblib")
 
     print(f"Saved model: {xgb_path}")
     print(f"Saved calibrator: {cal_path}")

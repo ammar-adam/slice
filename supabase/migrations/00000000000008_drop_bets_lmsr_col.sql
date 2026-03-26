@@ -1,0 +1,2 @@
+ALTER TABLE bets DROP COLUMN IF EXISTS lmsr_state;
+ALTER TABLE bets DROP COLUMN IF EXISTS model_probability;

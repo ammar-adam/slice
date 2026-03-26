@@ -1,44 +1,40 @@
 import Link from "next/link";
 
-import { SignInCTA } from "@/components/marketing/sign-in-cta";
-
 export default function LandingPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-8 px-5 py-14">
-      <div className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slice-primary">
-          Slice
-        </p>
-        <h1 className="text-3xl font-bold leading-tight text-neutral-900">
-          Turn waiting for food into a group chat game.
+    <main className="slice-page slice-dot-grid flex flex-col justify-between">
+      <section className="pt-16">
+        <p className="slice-logo text-xl">slice</p>
+        <h1 className="slice-heading mt-8 text-5xl leading-[0.92]">
+          <span className="block">wanna bet</span>
+          <span className="block" style={{ color: "var(--slice-orange)" }}>
+            your food is late?
+          </span>
         </h1>
-        <p className="text-base text-neutral-600">
-          Bet over/under on whether your delivery lands on time — no money, just
-          dares, streaks, and screenshots.
+        <p className="mt-6 max-w-[34ch] text-base" style={{ color: "var(--slice-muted)", fontWeight: 300 }}>
+          A prediction market for your delivery orders
         </p>
-      </div>
-
-      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-        <p className="mb-4 text-sm text-neutral-600">
-          Connect Gmail once. We read your delivery receipts, you get a shareable
-          link for the group.
-        </p>
-        <SignInCTA />
-      </div>
-
-      <div className="flex gap-4 text-sm">
         <Link
-          href="/rankings"
-          className="font-medium text-slice-primary underline-offset-4 hover:underline"
+          href="/create"
+          className="slice-btn-primary mt-8 block w-full px-4 py-[14px] text-center"
         >
-          Restaurant rankings
+          Start betting
         </Link>
-        <Link
-          href="/home"
-          className="font-medium text-neutral-500 underline-offset-4 hover:underline"
-        >
-          Dashboard
-        </Link>
+      </section>
+
+      <div className="mb-8 grid grid-cols-3 gap-2">
+        {["AI-generated odds", "Live market", "Dare mode"].map((item, i) => (
+          <div
+            key={item}
+            className="slice-card slice-fade-up px-2 py-3 text-center text-[11px]"
+            style={{
+              color: "var(--slice-text)",
+              animationDelay: `${i * 80}ms`,
+            }}
+          >
+            {item}
+          </div>
+        ))}
       </div>
     </main>
   );

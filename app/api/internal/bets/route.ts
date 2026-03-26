@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { getSession } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { placeBet, type MarketState } from "@/lib/market/lmsr";
 
 const placeBetSchema = z.object({
   slug: z.string().min(4).max(40),
@@ -79,6 +80,32 @@ export async function POST(req: Request) {
     }
     console.error("bet_participants insert", insError);
     return NextResponse.json({ error: "Could not place pick" }, { status: 500 });
+  }
+
+  // Update LMSR market state (stored in bet_markets) and broadcast latest implied price.
+  const { data: marketRowRaw } = await (supabase as any)
+    .from("bet_markets")
+    .select("lmsr_state")
+    .eq("bet_id", betId)
+    .maybeSingle();
+  const marketRow = marketRowRaw as { lmsr_state?: unknown } | null;
+
+  if (marketRow?.lmsr_state && typeof marketRow.lmsr_state === "object") {
+    const s = marketRow.lmsr_state as MarketState;
+    const { next, newPriceOver } = placeBet(s, side, 10);
+    await (supabase as any).from("bet_markets").update({ lmsr_state: next }).eq("bet_id", betId);
+
+    try {
+      const channel = supabase.realtime.channel(`bet:${betId}`);
+      await channel.send({
+        type: "broadcast",
+        event: "lmsr_update",
+        payload: { price_over: newPriceOver, lmsr_state: next },
+      });
+      await supabase.realtime.removeChannel(channel);
+    } catch {
+      // best-effort
+    }
   }
 
   return NextResponse.json({ ok: true });

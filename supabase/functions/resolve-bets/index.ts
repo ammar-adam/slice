@@ -46,17 +46,26 @@ function json(data: unknown, status = 200) {
   });
 }
 
-async function readBody(req: Request): Promise<{ order_id?: string } | null> {
+async function readBody(req: Request): Promise<
+  { order_id?: string; actual_minutes?: number; source?: string } | null
+> {
   try {
     if (req.method !== "POST") return null;
     const ct = req.headers.get("content-type") ?? "";
     if (!ct.toLowerCase().includes("application/json")) return null;
     const json = await req.json().catch(() => null) as unknown;
     if (!json || typeof json !== "object") return null;
-    const order_id = (json as { order_id?: unknown }).order_id;
-    return typeof order_id === "string" && order_id.trim()
-      ? { order_id: order_id.trim() }
-      : {};
+    const obj = json as { order_id?: unknown; actual_minutes?: unknown; source?: unknown };
+    const order_id = obj.order_id;
+    const actual_minutes = obj.actual_minutes;
+    const source = obj.source;
+    const out: { order_id?: string; actual_minutes?: number; source?: string } = {};
+    if (typeof order_id === "string" && order_id.trim()) out.order_id = order_id.trim();
+    if (typeof actual_minutes === "number" && Number.isFinite(actual_minutes) && actual_minutes > 0) {
+      out.actual_minutes = Math.round(actual_minutes);
+    }
+    if (typeof source === "string" && source.trim()) out.source = source.trim();
+    return out;
   } catch {
     return null;
   }
@@ -141,6 +150,7 @@ serve(async (req) => {
   try {
     const body = await readBody(req);
     const onlyOrderId = body?.order_id ?? null;
+    const manualActualMinutes = body?.actual_minutes ?? null;
 
     const sb0 = getServiceSupabase();
     if (!sb0.ok) {
@@ -269,7 +279,10 @@ serve(async (req) => {
       for (const order of hostOrders) {
         const g = gmailActual.get(order.id);
         const prior = order.actual_delivery_minutes;
-        const actual = g?.mins ?? (prior != null ? prior : null);
+        const manual = onlyOrderId === order.id && manualActualMinutes != null
+          ? manualActualMinutes
+          : null;
+        const actual = manual ?? g?.mins ?? (prior != null ? prior : null);
 
         if (actual == null) {
           const openBets = (order.bets ?? []).filter((b) => b.status === "open");
@@ -321,7 +334,17 @@ serve(async (req) => {
           continue;
         }
 
-        if (g) {
+        if (manual != null) {
+          const { error: u0 } = await supabase.from("orders").update({
+            actual_delivery_minutes: actual,
+            resolved: true,
+            resolved_at: nowIso,
+          }).eq("id", order.id);
+          if (u0) {
+            summary.errors.push(`order ${order.id}: manual_actual ${u0.message}`);
+            continue;
+          }
+        } else if (g) {
           const { error: u0 } = await supabase.from("orders").update({
             actual_delivery_minutes: actual,
             gmail_message_id_delivered: g.msgId,

@@ -7,19 +7,19 @@ export default async function AppLayout(props: { children: React.ReactNode }) {
   const session = await getSession();
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-10 pt-6">
+    <div className="slice-page">
       <header className="mb-6 flex items-center justify-between gap-3">
-        <Link href="/home" className="text-sm font-bold text-slice-primary">
-          Slice
+        <Link href="/home" className="slice-logo text-[26px] leading-none">
+          slice
         </Link>
-        <nav className="flex items-center gap-3 text-xs font-medium text-neutral-600">
-          <Link href="/orders" className="hover:text-neutral-900">
+        <nav className="flex items-center gap-3 text-xs" style={{ color: "var(--slice-muted)" }}>
+          <Link href="/orders" className="transition-colors duration-150 hover:text-[var(--slice-text)]">
             Orders
           </Link>
-          <Link href="/rankings" className="hover:text-neutral-900">
+          <Link href="/rankings" className="transition-colors duration-150 hover:text-[var(--slice-text)]">
             Rankings
           </Link>
-          <Link href="/settings" className="hover:text-neutral-900">
+          <Link href="/settings" className="transition-colors duration-150 hover:text-[var(--slice-text)]">
             Settings
           </Link>
           {session?.user?.email ? (

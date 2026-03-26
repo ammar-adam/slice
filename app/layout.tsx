@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { DM_Sans, Syne } from "next/font/google";
+import Script from "next/script";
 
 import { Providers } from "@/components/providers";
 import { getSession } from "@/lib/auth/session";
 
 import "./globals.css";
 
-const inter = Inter({
+const syne = Syne({
   subsets: ["latin"],
-  variable: "--font-geist-sans",
+  weight: ["700", "800"],
+  variable: "--font-slice-display",
+  display: "swap",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  variable: "--font-slice-body",
   display: "swap",
 });
 
@@ -21,8 +30,12 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   const session = await getSession();
 
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="font-sans">
+    <html lang="en" className={`${syne.variable} ${dmSans.variable}`}>
+      <body>
+        <Script
+          src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY ?? ""}`}
+          strategy="afterInteractive"
+        />
         <Providers session={session}>{props.children}</Providers>
       </body>
     </html>

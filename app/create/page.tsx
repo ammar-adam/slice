@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { CreateBetForm } from "@/components/bets/create-bet-form";
+import { CreateBetPageForm } from "@/components/bets/create-bet-page-form";
 import { getSession } from "@/lib/auth/session";
 
 export default async function CreateBetPage() {
@@ -9,5 +10,14 @@ export default async function CreateBetPage() {
     redirect("/");
   }
 
-  return <CreateBetForm />;
+  return (
+    <main className="slice-page">
+      <header className="mb-6 flex items-center justify-between">
+        <Link href="/home" className="slice-logo text-[26px] leading-none">
+          slice
+        </Link>
+      </header>
+      <CreateBetPageForm />
+    </main>
+  );
 }

@@ -1,0 +1,152 @@
+{
+  "generated_at": "2026-03-26T14:57:24.211291+00:00",
+  "model_version": "xgb_v1",
+  "n_rows": 50000,
+  "n_train": 36125,
+  "n_val": 6375,
+  "n_test": 7500,
+  "roc_auc_test": 0.6649469390220397,
+  "brier_score_test": 0.19610595711355455,
+  "calibration_curve": {
+    "mean_predicted_value": [
+      0.16388856162942167,
+      0.1935867619063595,
+      0.21793358478290115,
+      0.249267179471607,
+      0.2811743528758321,
+      0.3111044876905383,
+      0.3407108929346571,
+      0.3743490083521276,
+      0.4213889170784644,
+      0.6011753785780514
+    ],
+    "fraction_of_positives": [
+      0.16,
+      0.17866666666666667,
+      0.2,
+      0.25866666666666666,
+      0.2733333333333333,
+      0.32266666666666666,
+      0.33066666666666666,
+      0.364,
+      0.428,
+      0.6253333333333333
+    ]
+  },
+  "raw_model_prob_summary_test": {
+    "mean": 0.47572988271713257,
+    "p50": 0.46714895963668823,
+    "p90": 0.664054274559021
+  },
+  "calibrated_prob_summary_test": {
+    "mean": 0.315457912529996,
+    "p50": 0.296478028855502,
+    "p90": 0.4532727427991026
+  },
+  "feature_importances_gain": [
+    {
+      "feature": "restaurant_busy_score",
+      "gain": 80.4656982421875
+    },
+    {
+      "feature": "distance_peak",
+      "gain": 41.16331481933594
+    },
+    {
+      "feature": "eta_initial_minutes",
+      "gain": 22.832075119018555
+    },
+    {
+      "feature": "distance_km",
+      "gain": 19.3590087890625
+    },
+    {
+      "feature": "hour_sin",
+      "gain": 16.1812801361084
+    },
+    {
+      "feature": "is_peak",
+      "gain": 14.110135078430176
+    },
+    {
+      "feature": "eta_suspicion",
+      "gain": 10.021703720092773
+    },
+    {
+      "feature": "precip_mm",
+      "gain": 9.899248123168945
+    },
+    {
+      "feature": "restaurant_rating",
+      "gain": 9.697153091430664
+    },
+    {
+      "feature": "rating_reviews_log",
+      "gain": 9.237372398376465
+    },
+    {
+      "feature": "hour_cos",
+      "gain": 9.201776504516602
+    },
+    {
+      "feature": "temp_celsius",
+      "gain": 9.003435134887695
+    },
+    {
+      "feature": "restaurant_review_count",
+      "gain": 8.302912712097168
+    },
+    {
+      "feature": "dow_sin",
+      "gain": 8.06029224395752
+    },
+    {
+      "feature": "peak_rain",
+      "gain": 7.727538585662842
+    },
+    {
+      "feature": "dow_cos",
+      "gain": 7.310274124145508
+    }
+  ],
+  "shap_top5": [
+    {
+      "feature": "restaurant_busy_score",
+      "mean_abs_shap": 0.4009099006652832
+    },
+    {
+      "feature": "eta_initial_minutes",
+      "mean_abs_shap": 0.3840532898902893
+    },
+    {
+      "feature": "distance_peak",
+      "mean_abs_shap": 0.27910315990448
+    },
+    {
+      "feature": "distance_km",
+      "mean_abs_shap": 0.23431941866874695
+    },
+    {
+      "feature": "restaurant_rating",
+      "mean_abs_shap": 0.12874916195869446
+    }
+  ],
+  "optuna": {
+    "n_trials": 100,
+    "best_value_auc": 0.653568070301414,
+    "best_params": {
+      "n_estimators": 301.0,
+      "max_depth": 3.0,
+      "lr": 0.1880601037091983,
+      "subsample": 0.8605614104330829,
+      "colsample": 0.8523657517524306,
+      "min_child": 5.0,
+      "gamma": 2.2337323687154402,
+      "alpha": 5.158108351300012e-06,
+      "lambda": 0.014377797525263218
+    }
+  },
+  "artifacts": {
+    "calibration_curve_png": "calibration_curve_v1.png"
+  }
+}

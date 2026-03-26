@@ -1,4 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": []
+  "crons": [],
+  "functions": {
+    "api/predict/route.py": {
+      "runtime": "python3.11"
+    }
+  }
 }

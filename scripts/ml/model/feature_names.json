@@ -1,0 +1,18 @@
+[
+  "hour_sin",
+  "hour_cos",
+  "dow_sin",
+  "dow_cos",
+  "is_peak",
+  "precip_mm",
+  "temp_celsius",
+  "distance_km",
+  "restaurant_rating",
+  "restaurant_review_count",
+  "restaurant_busy_score",
+  "eta_initial_minutes",
+  "peak_rain",
+  "distance_peak",
+  "rating_reviews_log",
+  "eta_suspicion"
+]

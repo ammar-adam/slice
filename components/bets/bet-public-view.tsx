@@ -144,67 +144,65 @@ export function BetPublicView(props: { slug: string; initial: PublicBetPayload }
 
   return (
     <div className="space-y-5">
-      <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/[0.06]">
-        <div className="bg-gradient-to-br from-slice-primary to-orange-600 px-5 py-6 text-white">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/80">
+      <div className="slice-card overflow-hidden">
+        <div className="px-5 py-5">
+          <p className="slice-label text-[10px]" style={{ color: "var(--slice-muted)" }}>
             Delivery bet
           </p>
-          <h1 className="mt-2 text-2xl font-bold leading-tight">{order.restaurant_name}</h1>
+          <h1 className="slice-heading mt-2 text-2xl leading-tight">{order.restaurant_name}</h1>
           <div className="mt-5 flex items-end justify-between gap-4">
             <div>
-              <p className="text-3xl font-black tabular-nums tracking-tight">
+              <p className="slice-number text-3xl tabular-nums">
                 {countdown.primary}
               </p>
-              <p
-                className={`text-xs font-medium ${countdown.past ? "text-amber-100" : "text-white/80"}`}
-              >
+              <p className="text-xs" style={{ color: countdown.past ? "var(--slice-red)" : "var(--slice-muted)" }}>
                 {countdown.secondary}
               </p>
             </div>
-            <div className="rounded-2xl bg-white/15 px-3 py-2 text-right ring-1 ring-white/20 backdrop-blur-sm">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-white/70">
+            <div className="slice-card px-3 py-2 text-right">
+              <p className="slice-label text-[10px]" style={{ color: "var(--slice-muted)" }}>
                 Model (late)
               </p>
-              <p className="text-xl font-bold tabular-nums">{probPct}%</p>
+              <p className="slice-number text-xl tabular-nums">{probPct}%</p>
             </div>
           </div>
         </div>
 
         <div className="space-y-4 px-5 py-5">
           {bet.dare_text ? (
-            <div className="rounded-2xl bg-orange-50/90 px-4 py-3 ring-1 ring-orange-100">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slice-primary">
+            <div className="slice-card slice-active px-4 py-3">
+              <p className="slice-label text-[10px]" style={{ color: "var(--slice-orange)" }}>
                 Dare
               </p>
-              <p className="mt-1 text-sm font-medium text-neutral-900">{bet.dare_text}</p>
+              <p className="mt-1 text-sm">{bet.dare_text}</p>
             </div>
           ) : null}
 
           {!isOpen ? (
-            <p className="rounded-2xl bg-neutral-100 px-4 py-3 text-center text-sm text-neutral-600">
+            <p className="slice-card px-4 py-3 text-center text-sm" style={{ color: "var(--slice-muted)" }}>
               This bet is {bet.status === "resolved" ? "resolved" : "closed"} — new picks are off.
             </p>
           ) : null}
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            <p className="slice-label text-[10px]" style={{ color: "var(--slice-muted)" }}>
               In so far
             </p>
             {participants.length === 0 ? (
-              <p className="mt-3 rounded-2xl bg-neutral-50 px-4 py-6 text-center text-sm text-neutral-500 ring-1 ring-black/[0.04]">
+              <p className="slice-card mt-3 px-4 py-6 text-center text-sm" style={{ color: "var(--slice-muted)" }}>
                 No picks yet. Be the first.
               </p>
             ) : (
-              <ul className="mt-2 divide-y divide-neutral-100 rounded-2xl ring-1 ring-black/[0.04]">
+              <ul className="slice-card mt-2 divide-y" style={{ borderColor: "var(--slice-border)" }}>
                 {participants.map((p) => (
                   <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                    <span className="font-medium text-neutral-900">{p.display_name}</span>
+                    <span>{p.display_name}</span>
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        p.side === "over"
-                          ? "bg-orange-100 text-orange-900"
-                          : "bg-emerald-100 text-emerald-900"
-                      }`}
+                      className="rounded-full px-3 py-1 text-xs"
+                      style={{
+                        border: "1px solid var(--slice-border2)",
+                        color: p.side === "over" ? "var(--slice-orange)" : "var(--slice-green)",
+                      }}
                     >
                       {p.side === "over" ? "Over (late)" : "Under (on time)"}
                     </span>
@@ -218,17 +216,17 @@ export function BetPublicView(props: { slug: string; initial: PublicBetPayload }
 
       <form
         onSubmit={submitPick}
-        className={`rounded-3xl bg-white p-5 shadow-sm ring-1 ring-black/[0.06] ${!isOpen ? "opacity-50" : ""}`}
+        className={`slice-card p-5 ${!isOpen ? "opacity-50" : ""}`}
       >
-        <p className="text-xs font-semibold uppercase tracking-wide text-slice-primary">
+        <p className="slice-label text-[10px]" style={{ color: "var(--slice-muted)" }}>
           Your pick
         </p>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm" style={{ color: "var(--slice-muted)" }}>
           Over = later than the quoted ETA. Under = on time or early.
         </p>
 
         <label className="mt-4 block space-y-2">
-          <span className="text-xs font-medium text-neutral-600">Name</span>
+          <span className="slice-label text-[10px]" style={{ color: "var(--slice-muted)" }}>Name</span>
           <input
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
@@ -236,7 +234,7 @@ export function BetPublicView(props: { slug: string; initial: PublicBetPayload }
             autoComplete="nickname"
             disabled={!isOpen}
             required
-            className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3.5 text-base outline-none ring-slice-primary/25 focus:border-slice-primary focus:bg-white focus:ring-2 disabled:opacity-60"
+            className="slice-input w-full px-4 py-3.5 text-base disabled:opacity-60"
           />
         </label>
 
@@ -245,11 +243,7 @@ export function BetPublicView(props: { slug: string; initial: PublicBetPayload }
             type="button"
             disabled={!isOpen}
             onClick={() => setSide("over")}
-            className={`rounded-2xl border-2 py-3.5 text-sm font-semibold transition ${
-              side === "over"
-                ? "border-slice-primary bg-orange-50 text-orange-950"
-                : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300"
-            } disabled:opacity-50`}
+            className={`slice-card py-3.5 text-sm transition disabled:opacity-50 ${side === "over" ? "slice-active" : ""}`}
           >
             Over
           </button>
@@ -257,26 +251,22 @@ export function BetPublicView(props: { slug: string; initial: PublicBetPayload }
             type="button"
             disabled={!isOpen}
             onClick={() => setSide("under")}
-            className={`rounded-2xl border-2 py-3.5 text-sm font-semibold transition ${
-              side === "under"
-                ? "border-emerald-600 bg-emerald-50 text-emerald-950"
-                : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300"
-            } disabled:opacity-50`}
+            className={`slice-card py-3.5 text-sm transition disabled:opacity-50 ${side === "under" ? "slice-active" : ""}`}
           >
             Under
           </button>
         </div>
 
         {error ? (
-          <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+          <p className="mt-3 text-sm" style={{ color: "var(--slice-red)" }}>{error}</p>
         ) : null}
 
         <button
           type="submit"
           disabled={busy || !isOpen}
-          className="mt-5 w-full rounded-2xl bg-slice-primary py-4 text-base font-semibold text-white shadow-md shadow-orange-200/40 transition hover:brightness-105 disabled:opacity-50"
+          className="slice-btn-primary mt-5 w-full py-4 text-base disabled:opacity-50"
         >
-          {busy ? "Placing…" : "Place pick"}
+          {busy ? "Placing..." : `Bet ${side === "over" ? "Over" : "Under"} · ${side === "over" ? Math.max(1, Math.round(probPct * 0.73)) : Math.max(1, 100 - Math.round(probPct * 0.73))}¢`}
         </button>
       </form>
     </div>
