@@ -33,6 +33,10 @@ verify_jwt = true
 # If your CLI/version doesn't support this yet, schedule via pg_cron + pg_net instead.
 schedule = "*/5 * * * *"
 
+[functions.poll-active-orders]
+verify_jwt = true
+schedule = "* * * * *"
+
 [functions.ingest-mail]
 verify_jwt = true
 
