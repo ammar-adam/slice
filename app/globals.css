@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --slice-primary: #ff5a1f;
+  --slice-surface: #ffffff;
+  --slice-muted: #737373;
+}
+
+body {
+  @apply min-h-screen bg-neutral-50 text-neutral-900 antialiased;
+}

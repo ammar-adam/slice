@@ -1,0 +1,38 @@
+# Minimal Supabase local config — extend via `supabase init` as needed.
+
+project_id = "slice"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+# -----------------------------------------------------------------------------
+# Edge Functions
+# resolve-bets: schedule cron every 5 minutes (Supabase Dashboard → Edge
+# Functions → Schedules for hosted projects, or pg_cron + net.http_post locally).
+# Cron expression: */5 * * * *
+# -----------------------------------------------------------------------------
+[functions.resolve-bets]
+verify_jwt = true
+
+[functions.ingest-mail]
+verify_jwt = true
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
