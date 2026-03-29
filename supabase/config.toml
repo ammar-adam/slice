@@ -33,9 +33,10 @@ verify_jwt = true
 # If your CLI/version doesn't support this yet, schedule via pg_cron + pg_net instead.
 schedule = "*/5 * * * *"
 
+# Polls Uber Eats active order API (minute cadence; Supabase cron has no sub-minute schedule).
 [functions.poll-active-orders]
 verify_jwt = true
-schedule = "* * * * *"
+schedule = "*/1 * * * *"
 
 [functions.ingest-mail]
 verify_jwt = true

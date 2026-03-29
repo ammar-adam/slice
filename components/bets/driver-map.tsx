@@ -43,6 +43,8 @@ export function DriverMap(props: {
   const [waypoints, setWaypoints] = useState<LatLng[] | null>(null);
   const [pickupAt, setPickupAt] = useState<Date | null>(props.pickupAt);
   const [etaFinalMinutes, setEtaFinalMinutes] = useState<number | null>(null);
+  const [liveGps, setLiveGps] = useState<LatLng | null>(null);
+  const [liveEtaRemaining, setLiveEtaRemaining] = useState<number | null>(null);
 
   const origin = useMemo(
     () => ({ lat: props.restaurantLat, lng: props.restaurantLng }),
@@ -90,7 +92,6 @@ export function DriverMap(props: {
   }, [supabase, props.orderId]);
 
   useEffect(() => {
-    // Subscribe to order broadcasts to detect pickup (eta_final update).
     const channel = supabase
       .channel(`order:${props.orderId}`)
       .on("broadcast", { event: "eta_update" }, (payload) => {
@@ -99,6 +100,24 @@ export function DriverMap(props: {
         if (typeof eta === "number" && Number.isFinite(eta) && eta > 0) {
           setEtaFinalMinutes(Math.round(eta));
           setPickupAt((prev) => prev ?? new Date());
+        }
+      })
+      .on("broadcast", { event: "location_update" }, (payload) => {
+        const p = payload?.payload as {
+          lat?: unknown;
+          lng?: unknown;
+          eta_remaining_minutes?: unknown;
+        };
+        const lat = typeof p?.lat === "number" ? p.lat : Number(p?.lat);
+        const lng = typeof p?.lng === "number" ? p.lng : Number(p?.lng);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          setLiveGps({ lat, lng });
+          setPickupAt((prev) => prev ?? new Date());
+        }
+        const er = p?.eta_remaining_minutes;
+        if (typeof er === "number" && Number.isFinite(er) && er >= 0) {
+          setLiveEtaRemaining(Math.round(er));
+          setEtaFinalMinutes(Math.round(er));
         }
       })
       .subscribe();
@@ -203,9 +222,18 @@ export function DriverMap(props: {
   }, [waypoints]);
 
   useEffect(() => {
-    // Animate driver along route.
+    if (!hasGoogleMaps()) return;
+    if (!driverMarkerRef.current) return;
+    if (liveGps) {
+      driverMarkerRef.current.setPosition(liveGps);
+    }
+  }, [liveGps]);
+
+  useEffect(() => {
+    // Simulated path when Uber GPS updates are not available.
     if (!hasGoogleMaps()) return;
     if (!mapRef.current || !driverMarkerRef.current) return;
+    if (liveGps) return;
     if (!waypoints || waypoints.length < 2) return;
 
     const eta = Math.max(1, etaFinalMinutes ?? props.etaMinutes);
@@ -239,7 +267,15 @@ export function DriverMap(props: {
       if (animRef.current != null) window.clearTimeout(animRef.current);
       animRef.current = null;
     };
-  }, [waypoints, etaFinalMinutes, pickupAt, origin, props.etaMinutes, props.orderPlacedAt]);
+  }, [
+    liveGps,
+    waypoints,
+    etaFinalMinutes,
+    pickupAt,
+    origin,
+    props.etaMinutes,
+    props.orderPlacedAt,
+  ]);
 
   if (!Number.isFinite(origin.lat) || !Number.isFinite(origin.lng) || !Number.isFinite(dest.lat) ||
     !Number.isFinite(dest.lng)) {
@@ -258,7 +294,13 @@ export function DriverMap(props: {
       <div className="px-5 py-4">
         <p className="text-sm font-semibold text-neutral-900">Live tracking</p>
         <p className="mt-1 text-xs text-neutral-500">
-          {pickupAt ? "Driver en route" : "Being prepared"}
+          {liveGps
+            ? liveEtaRemaining != null
+              ? `Live GPS · ~${liveEtaRemaining} min`
+              : "Live GPS · driver on map"
+            : pickupAt
+              ? "Driver en route (simulated path)"
+              : "Being prepared"}
         </p>
       </div>
       <div ref={containerRef} className="h-56 w-full bg-neutral-100" />

@@ -49,6 +49,30 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["google_oauth_tokens"]["Insert"]>;
         Relationships: [];
       };
+      uber_sessions: {
+        Row: {
+          host_id: string;
+          cookie_ciphertext: string;
+          x_csrf_token: string | null;
+          authorization_header: string | null;
+          validated_at: string;
+          expires_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          host_id: string;
+          cookie_ciphertext: string;
+          x_csrf_token?: string | null;
+          authorization_header?: string | null;
+          validated_at?: string;
+          expires_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["uber_sessions"]["Insert"]>;
+        Relationships: [];
+      };
       orders: {
         Row: {
           id: string;

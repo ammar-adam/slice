@@ -20,21 +20,34 @@ export default function LandingPage() {
         >
           Start betting
         </Link>
+
+        <div className="mt-16 grid grid-cols-3 gap-6 text-center">
+          {[
+            { n: "01", label: "Order food" },
+            { n: "02", label: "Share the bet" },
+            { n: "03", label: "Watch odds move" },
+          ].map((step) => (
+            <div key={step.n}>
+              <p className="slice-number text-3xl" style={{ color: "var(--slice-orange)" }}>
+                {step.n}
+              </p>
+              <p className="mt-2 text-sm" style={{ color: "var(--slice-muted)" }}>
+                {step.label}
+              </p>
+            </div>
+          ))}
+        </div>
       </section>
 
-      <div className="mb-8 grid grid-cols-3 gap-2">
-        {["AI-generated odds", "Live market", "Dare mode"].map((item, i) => (
-          <div
-            key={item}
-            className="slice-card slice-fade-up px-2 py-3 text-center text-[11px]"
-            style={{
-              color: "var(--slice-text)",
-              animationDelay: `${i * 80}ms`,
-            }}
-          >
-            {item}
-          </div>
-        ))}
+      <div
+        className="mb-8 text-center text-[12px]"
+        style={{ color: "var(--slice-muted)", letterSpacing: "0.08em" }}
+      >
+        <span>AI-generated odds</span>
+        <span style={{ color: "#ffffff20" }}> {" · "} </span>
+        <span>Live market</span>
+        <span style={{ color: "#ffffff20" }}> {" · "} </span>
+        <span>Dare mode</span>
       </div>
     </main>
   );

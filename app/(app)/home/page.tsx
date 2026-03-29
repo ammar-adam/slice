@@ -25,8 +25,6 @@ export default function HomePage() {
 
   const [orders, setOrders] = useState<HostOrderRow[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-
   const [toast, setToast] = useState<{
     kind: "success" | "error";
     message: string;
@@ -61,28 +59,33 @@ export default function HomePage() {
     }
   }
 
-  async function syncOrders() {
-    setSyncing(true);
-    try {
-      const res = await fetch("/api/internal/gmail/sync", { method: "POST" });
-      const data = (await res.json().catch(() => ({}))) as {
-        ok?: boolean;
-        error?: { message?: string };
-      };
-      if (!res.ok || data.ok !== true) {
-        showToast("error", data.error?.message ?? "Sync failed");
-        return;
-      }
-      showToast("success", "Synced Gmail orders");
-      await refreshOrders();
-    } finally {
-      setSyncing(false);
-    }
-  }
-
   useEffect(() => {
     if (status !== "authenticated") return;
-    void refreshOrders();
+    let cancelled = false;
+    (async () => {
+      try {
+        const sessRes = await fetch("/api/internal/uber/session");
+        const sess = (await sessRes.json().catch(() => ({}))) as { connected?: boolean };
+        if (!cancelled && sessRes.ok && sess.connected === true) {
+          const syncRes = await fetch("/api/internal/uber/sync", { method: "POST" });
+          const syncData = (await syncRes.json().catch(() => ({}))) as {
+            synced?: number;
+            error?: string;
+          };
+          if (!cancelled && syncRes.ok && typeof syncData.synced === "number" && syncData.synced > 0) {
+            showToast("success", `${syncData.synced} new order${syncData.synced === 1 ? "" : "s"} imported`);
+          } else if (!cancelled && syncRes.ok === false && syncData.error) {
+            showToast("error", syncData.error);
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+      if (!cancelled) await refreshOrders();
+    })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
@@ -114,14 +117,13 @@ export default function HomePage() {
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={() => void syncOrders()}
-        disabled={syncing || status !== "authenticated"}
-        className="slice-btn-secondary ml-auto flex w-fit items-center justify-center px-3 py-2 text-xs disabled:opacity-60"
-      >
-        {syncing ? "Syncing orders…" : "Sync orders"}
-      </button>
+      <p className="text-xs" style={{ color: "var(--slice-muted)" }}>
+        Orders sync automatically when{" "}
+        <Link href="/connect/ubereats" className="underline" style={{ color: "var(--slice-accent)" }}>
+          Uber Eats is connected
+        </Link>
+        .
+      </p>
 
       <section className="slice-card slice-fade-up p-4" style={{ animationDelay: "80ms" }}>
         <h2 className="slice-heading text-2xl">Recent orders</h2>
