@@ -61,31 +61,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const sessRes = await fetch("/api/internal/uber/session");
-        const sess = (await sessRes.json().catch(() => ({}))) as { connected?: boolean };
-        if (!cancelled && sessRes.ok && sess.connected === true) {
-          const syncRes = await fetch("/api/internal/uber/sync", { method: "POST" });
-          const syncData = (await syncRes.json().catch(() => ({}))) as {
-            synced?: number;
-            error?: string;
-          };
-          if (!cancelled && syncRes.ok && typeof syncData.synced === "number" && syncData.synced > 0) {
-            showToast("success", `${syncData.synced} new order${syncData.synced === 1 ? "" : "s"} imported`);
-          } else if (!cancelled && syncRes.ok === false && syncData.error) {
-            showToast("error", syncData.error);
-          }
-        }
-      } catch {
-        /* ignore */
-      }
-      if (!cancelled) await refreshOrders();
-    })();
-    return () => {
-      cancelled = true;
-    };
+    void refreshOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
@@ -104,26 +80,26 @@ export default function HomePage() {
         </div>
       ) : null}
 
-      <div className="slice-card slice-fade-up p-4" style={{ animationDelay: "0ms" }}>
-        <p className="slice-label text-[10px]" style={{ color: "var(--slice-muted)" }}>
-          Host
-        </p>
-        <h1 className="slice-heading mt-1 text-3xl">Your slice</h1>
-        <p className="mt-2 text-sm" style={{ color: "var(--slice-muted)" }}>
-          Signed in as{" "}
-          <span style={{ color: "var(--slice-text)" }}>
-            {signedInEmail ?? "friend"}
-          </span>
-        </p>
-      </div>
-
-      <p className="text-xs" style={{ color: "var(--slice-muted)" }}>
-        Orders sync automatically when{" "}
-        <Link href="/connect/ubereats" className="underline" style={{ color: "var(--slice-accent)" }}>
-          Uber Eats is connected
+      <div className="slice-card slice-fade-up flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between" style={{ animationDelay: "0ms" }}>
+        <div>
+          <p className="slice-label text-[10px]" style={{ color: "var(--slice-muted)" }}>
+            Host
+          </p>
+          <h1 className="slice-heading mt-1 text-3xl">Your bets</h1>
+          <p className="mt-2 text-sm" style={{ color: "var(--slice-muted)" }}>
+            Signed in as{" "}
+            <span style={{ color: "var(--slice-text)" }}>
+              {signedInEmail ?? "friend"}
+            </span>
+          </p>
+        </div>
+        <Link
+          href="/create"
+          className="slice-btn-primary shrink-0 px-5 py-3 text-center text-sm font-semibold"
+        >
+          New bet
         </Link>
-        .
-      </p>
+      </div>
 
       <section className="slice-card slice-fade-up p-4" style={{ animationDelay: "80ms" }}>
         <h2 className="slice-heading text-2xl">Recent orders</h2>
@@ -133,7 +109,7 @@ export default function HomePage() {
           </p>
         ) : orders.length === 0 ? (
           <p className="slice-card mt-4 px-4 py-10 text-center text-sm" style={{ color: "var(--slice-muted)" }}>
-            Order something and start a bet with your group
+            Paste an Uber Eats order link to start your first bet
           </p>
         ) : (
           <ul className="mt-4 space-y-3">

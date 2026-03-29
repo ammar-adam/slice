@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { StartBettingButton } from "@/components/marketing/start-betting-button";
 
 export default function LandingPage() {
   return (
@@ -14,12 +14,7 @@ export default function LandingPage() {
         <p className="mt-6 max-w-[34ch] text-base" style={{ color: "var(--slice-muted)", fontWeight: 300 }}>
           A prediction market for your delivery orders
         </p>
-        <Link
-          href="/create"
-          className="slice-btn-primary mt-8 block w-full px-4 py-[14px] text-center"
-        >
-          Start betting
-        </Link>
+        <StartBettingButton />
 
         <div className="mt-16 grid grid-cols-3 gap-6 text-center">
           {[

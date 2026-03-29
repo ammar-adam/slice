@@ -15,6 +15,7 @@ const createBodySchema = z.object({
   restaurantName: z.string().min(1).max(200),
   etaMinutes: z.coerce.number().int().min(1).max(240),
   dareText: z.string().max(500).optional().nullable(),
+  uberOrderUuid: z.string().uuid().optional().nullable(),
 });
 
 async function geocodeRestaurant(name: string): Promise<{ lat: number; lng: number } | null> {
@@ -72,10 +73,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid body", issues: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { restaurantName, etaMinutes, dareText } = parsed.data;
+  const { restaurantName, etaMinutes, dareText, uberOrderUuid } = parsed.data;
   const name = restaurantName.trim();
   const dare =
     dareText?.trim() && dareText.trim().length > 0 ? dareText.trim() : null;
+  const uberUuid =
+    typeof uberOrderUuid === "string" && uberOrderUuid.trim().length > 0
+      ? uberOrderUuid.trim()
+      : null;
 
   const hostId = await ensureHostByNextAuthUserId({
     nextauthUserId: session.user.id,
@@ -131,13 +136,14 @@ export async function POST(req: Request) {
     .from("orders")
     .insert({
       host_id: hostId,
-      platform: "unknown",
+      platform: uberUuid ? "uber_eats" : "unknown",
       restaurant_name: name,
       restaurant_name_normalized: normalizeRestaurantName(name),
       eta_initial_minutes: etaMinutes,
       order_placed_at: placedIso,
       delay_score: delayScore,
       distance_km: null,
+      ...(uberUuid ? { uber_order_uuid: uberUuid } : {}),
     })
     .select("id")
     .single();

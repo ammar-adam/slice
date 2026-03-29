@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { CreateBetPageForm } from "@/components/bets/create-bet-page-form";
+import { CreateFromUberLinkForm } from "@/components/bets/create-from-uber-link-form";
 import { getSession } from "@/lib/auth/session";
 
 export default async function CreateBetPage() {
@@ -17,7 +17,7 @@ export default async function CreateBetPage() {
           slice
         </Link>
       </header>
-      <CreateBetPageForm />
+      <CreateFromUberLinkForm />
     </main>
   );
 }

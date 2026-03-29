@@ -19,12 +19,6 @@ export default async function AppLayout(props: { children: React.ReactNode }) {
           <Link href="/rankings" className="transition-colors duration-150 hover:text-[var(--slice-text)]">
             Rankings
           </Link>
-          <Link
-            href="/connect/ubereats"
-            className="transition-colors duration-150 hover:text-[var(--slice-text)]"
-          >
-            Uber
-          </Link>
           <Link href="/settings" className="transition-colors duration-150 hover:text-[var(--slice-text)]">
             Settings
           </Link>
