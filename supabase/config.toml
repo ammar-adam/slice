@@ -29,14 +29,11 @@ port = 54324
 # -----------------------------------------------------------------------------
 [functions.resolve-bets]
 verify_jwt = true
-# Supabase CLI scheduled functions (cron syntax).
-# If your CLI/version doesn't support this yet, schedule via pg_cron + pg_net instead.
-schedule = "*/5 * * * *"
 
-# Polls Uber Eats active order API (minute cadence; Supabase cron has no sub-minute schedule).
+# Polls Uber Eats active order API (minute cadence).
+# Configure cron in Supabase Dashboard → Edge Functions → Schedules (CLI may not support schedule here).
 [functions.poll-active-orders]
 verify_jwt = true
-schedule = "*/1 * * * *"
 
 [functions.ingest-mail]
 verify_jwt = true
