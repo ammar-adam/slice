@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type ParseResponse = {
   uuid: string;
@@ -12,8 +12,14 @@ type ParseResponse = {
   error?: string;
 };
 
-export function CreateFromUberLinkForm() {
+type WaNotify = { waId: string; sig: string; uuid: string };
+
+export function CreateFromUberLinkForm(props: {
+  magicAuth?: boolean;
+  waNotify?: WaNotify;
+}) {
   const router = useRouter();
+  const { magicAuth = false, waNotify } = props;
   const [step, setStep] = useState<"url" | "confirm">("url");
   const [orderUrl, setOrderUrl] = useState("");
   const [parsed, setParsed] = useState<ParseResponse | null>(null);
@@ -23,6 +29,43 @@ export function CreateFromUberLinkForm() {
   const [dareText, setDareText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [magicSuccess, setMagicSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!waNotify?.uuid) return;
+    const syntheticUrl = `https://www.ubereats.com/orders/${waNotify.uuid}`;
+    setOrderUrl(syntheticUrl);
+    setBusy(true);
+    void (async () => {
+      try {
+        const res = await fetch("/api/internal/uber/parse-order", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ order_url: syntheticUrl, uuid: waNotify.uuid }),
+        });
+        const data = (await res.json().catch(() => ({}))) as ParseResponse & { error?: string };
+        if (!res.ok) {
+          setError(typeof data.error === "string" ? data.error : "Could not read order link");
+          setBusy(false);
+          return;
+        }
+        setParsed({
+          uuid: data.uuid,
+          restaurant_name: data.restaurant_name,
+          eta_minutes: data.eta_minutes,
+          status: data.status,
+          needs_manual_input: data.needs_manual_input,
+        });
+        setRestaurantName(data.restaurant_name ?? "");
+        setEtaMinutes(
+          data.eta_minutes != null && data.eta_minutes > 0 ? String(data.eta_minutes) : "",
+        );
+        setStep("confirm");
+      } finally {
+        setBusy(false);
+      }
+    })();
+  }, [waNotify?.uuid, waNotify]);
 
   async function onParseSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -92,25 +135,72 @@ export function CreateFromUberLinkForm() {
 
     setBusy(true);
     try {
+      if (magicAuth && waNotify) {
+        const res = await fetch("/api/internal/orders/wa-complete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            wa_id: waNotify.waId,
+            uuid: parsed.uuid,
+            restaurantName: name,
+            etaMinutes: eta,
+            dareText: dareText.trim() || null,
+            sig: waNotify.sig,
+          }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { slug?: string; error?: string };
+        if (!res.ok || !data.slug) {
+          setError(typeof data.error === "string" ? data.error : "Failed to create bet");
+          return;
+        }
+        setMagicSuccess("Bet created! Check your WhatsApp for the share link.");
+        return;
+      }
+
+      const body: Record<string, unknown> = {
+        restaurantName: name,
+        etaMinutes: eta,
+        dareText: dareText.trim() || null,
+        uberOrderUuid: parsed.uuid,
+      };
+      if (waNotify?.waId && waNotify.sig && parsed.uuid) {
+        body.notifyWaId = waNotify.waId;
+        body.notifySig = waNotify.sig;
+      }
+
       const res = await fetch("/api/internal/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          restaurantName: name,
-          etaMinutes: eta,
-          dareText: dareText.trim() || null,
-          uberOrderUuid: parsed.uuid,
-        }),
+        body: JSON.stringify(body),
       });
-      const data = (await res.json().catch(() => ({}))) as { slug?: string; error?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        slug?: string;
+        error?: string;
+        whatsapp_sent?: boolean;
+      };
       if (!res.ok || !data.slug) {
         setError(typeof data.error === "string" ? data.error : "Failed to create bet");
+        return;
+      }
+      if (data.whatsapp_sent) {
+        setMagicSuccess("Bet created! Check your WhatsApp for the share link.");
         return;
       }
       router.push(`/bet/${data.slug}`);
     } finally {
       setBusy(false);
     }
+  }
+
+  if (magicSuccess) {
+    return (
+      <div className="slice-card slice-fade-up space-y-4 p-6 text-center">
+        <p className="slice-heading text-2xl">You&apos;re set</p>
+        <p className="text-sm" style={{ color: "var(--slice-muted)" }}>
+          {magicSuccess}
+        </p>
+      </div>
+    );
   }
 
   if (step === "confirm" && parsed) {
@@ -214,6 +304,16 @@ export function CreateFromUberLinkForm() {
           </button>
         </div>
       </form>
+    );
+  }
+
+  if (magicAuth && waNotify && busy && !parsed) {
+    return (
+      <div className="slice-card slice-fade-up space-y-4 p-6 text-center">
+        <p className="text-sm" style={{ color: "var(--slice-muted)" }}>
+          Loading your order from Uber…
+        </p>
+      </div>
     );
   }
 

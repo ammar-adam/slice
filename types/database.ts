@@ -14,6 +14,7 @@ export type Database = {
           google_sub: string | null;
           email: string | null;
           display_name: string | null;
+          whatsapp_wa_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -23,6 +24,7 @@ export type Database = {
           google_sub?: string | null;
           email?: string | null;
           display_name?: string | null;
+          whatsapp_wa_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -71,6 +73,24 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["uber_sessions"]["Insert"]>;
+        Relationships: [];
+      };
+      whatsapp_identities: {
+        Row: { wa_id: string; host_id: string; created_at: string };
+        Insert: { wa_id: string; host_id: string; created_at?: string };
+        Update: Partial<Database["public"]["Tables"]["whatsapp_identities"]["Insert"]>;
+        Relationships: [];
+      };
+      whatsapp_inbound_messages: {
+        Row: { message_id: string; wa_id: string; body: string | null; created_at: string };
+        Insert: { message_id: string; wa_id: string; body?: string | null; created_at?: string };
+        Update: Partial<Database["public"]["Tables"]["whatsapp_inbound_messages"]["Insert"]>;
+        Relationships: [];
+      };
+      whatsapp_conversation_state: {
+        Row: { wa_id: string; state: string; context_json: Json; updated_at: string };
+        Insert: { wa_id: string; state?: string; context_json?: Json; updated_at?: string };
+        Update: Partial<Database["public"]["Tables"]["whatsapp_conversation_state"]["Insert"]>;
         Relationships: [];
       };
       orders: {
